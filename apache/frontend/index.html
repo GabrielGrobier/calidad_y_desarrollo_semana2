@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tienda Segura | Demo JWT</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Inicio">
+        <span class="brand-mark">TS</span>
+        <span>
+          <strong>Tienda Segura</strong>
+          <small>Spring Security · JWT · HTTPS</small>
+        </span>
+      </a>
+      <div class="topbar-actions">
+        <span id="connectionBadge" class="badge badge-secure">HTTPS</span>
+        <div id="userArea" class="user-area hidden">
+          <span id="userLabel"></span>
+          <button id="logoutBtn" class="btn btn-ghost">Cerrar sesión</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section id="loginView" class="login-layout">
+        <div class="hero-panel">
+          <p class="eyebrow">SEGURIDAD Y CALIDAD EN EL DESARROLLO</p>
+          <h1>Una tienda para entender seguridad web de punta a punta.</h1>
+          <p class="hero-copy">
+            La interfaz consume un backend Spring Boot protegido por JWT. Apache entrega el
+            frontend por HTTPS y actúa como reverse proxy hacia la API.
+          </p>
+          <div class="flow-card">
+            <div class="flow-node">Navegador</div><span>HTTPS</span>
+            <div class="flow-node">Apache</div><span>/api</span>
+            <div class="flow-node">Spring</div><span>JDBC</span>
+            <div class="flow-node">MySQL</div>
+          </div>
+          <div class="demo-users">
+            <strong>Usuarios de demostración</strong>
+            <div class="demo-grid">
+              <button class="demo-user" data-user="admin" data-pass="admin123"><b>admin</b><small>ADMIN</small></button>
+              <button class="demo-user" data-user="vendedor" data-pass="vendedor123"><b>vendedor</b><small>VENDEDOR</small></button>
+              <button class="demo-user" data-user="cliente" data-pass="cliente123"><b>cliente</b><small>CLIENTE</small></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="login-panel card">
+          <div class="icon-lock">🔐</div>
+          <p class="eyebrow">AUTENTICACIÓN</p>
+          <h2>Iniciar sesión</h2>
+          <p class="muted">El backend validará las credenciales contra MySQL y responderá con un JWT.</p>
+          <form id="loginForm" class="form-stack">
+            <label>Usuario
+              <input id="username" name="username" autocomplete="username" placeholder="cliente" required>
+            </label>
+            <label>Contraseña
+              <input id="password" name="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+            </label>
+            <button id="loginBtn" class="btn btn-primary" type="submit">Obtener JWT e ingresar</button>
+          </form>
+          <div id="loginError" class="alert alert-error hidden"></div>
+          <div class="teaching-note">
+            <b>Qué observar:</b> abre DevTools → Network → <code>/api/login</code>. La respuesta contiene el token que luego se enviará en <code>Authorization: Bearer ...</code>.
+          </div>
+        </div>
+      </section>
+
+      <section id="dashboardView" class="dashboard hidden">
+        <div class="dashboard-head">
+          <div>
+            <p class="eyebrow">SESIÓN AUTENTICADA</p>
+            <h1>Panel de Tienda Segura</h1>
+            <p class="muted">Las acciones visibles cambian según el rol almacenado en el JWT.</p>
+          </div>
+          <div class="token-card">
+            <span>JWT activo</span>
+            <code id="tokenPreview"></code>
+            <button id="copyTokenBtn" class="btn btn-small">Copiar token</button>
+          </div>
+        </div>
+
+        <nav class="tabs" aria-label="Secciones">
+          <button class="tab active" data-tab="products">Productos</button>
+          <button class="tab role-cliente" data-tab="myPurchases">Mis compras</button>
+          <button class="tab role-admin" data-tab="newProduct">Nuevo producto</button>
+          <button class="tab role-admin role-vendedor" data-tab="allPurchases">Todas las compras</button>
+          <button class="tab" data-tab="jwt">Ver JWT</button>
+        </nav>
+
+        <div id="globalMessage" class="alert hidden"></div>
+
+        <section id="tab-products" class="tab-panel active">
+          <div class="section-title">
+            <div><p class="eyebrow">CATÁLOGO</p><h2>Productos disponibles</h2></div>
+            <button id="refreshProductsBtn" class="btn btn-ghost">Actualizar</button>
+          </div>
+          <div id="productsGrid" class="products-grid"></div>
+        </section>
+
+        <section id="tab-myPurchases" class="tab-panel">
+          <div class="section-title"><div><p class="eyebrow">CLIENTE</p><h2>Mis compras</h2></div></div>
+          <div id="myPurchasesList" class="table-wrap"></div>
+        </section>
+
+        <section id="tab-newProduct" class="tab-panel">
+          <div class="section-title"><div><p class="eyebrow">ADMINISTRACIÓN</p><h2>Registrar producto</h2></div></div>
+          <div class="card form-card">
+            <form id="productForm" class="form-grid">
+              <label>Nombre<input id="productName" required placeholder="Teclado mecánico"></label>
+              <label>Categoría<input id="productCategory" required placeholder="Accesorios"></label>
+              <label>Precio<input id="productPrice" required type="number" min="1" step="0.01" placeholder="49990"></label>
+              <label>Stock<input id="productStock" required type="number" min="0" step="1" placeholder="20"></label>
+              <label class="full">Descripción<textarea id="productDescription" rows="4" placeholder="Descripción del producto"></textarea></label>
+              <button class="btn btn-primary" type="submit">Guardar producto</button>
+            </form>
+          </div>
+        </section>
+
+        <section id="tab-allPurchases" class="tab-panel">
+          <div class="section-title"><div><p class="eyebrow">ADMIN / VENDEDOR</p><h2>Compras registradas</h2></div></div>
+          <div id="allPurchasesList" class="table-wrap"></div>
+        </section>
+
+        <section id="tab-jwt" class="tab-panel">
+          <div class="section-title"><div><p class="eyebrow">ANATOMÍA DEL TOKEN</p><h2>JWT decodificado</h2></div></div>
+          <div class="jwt-grid">
+            <article class="code-card"><span>Header</span><pre id="jwtHeader"></pre></article>
+            <article class="code-card"><span>Payload / Claims</span><pre id="jwtPayload"></pre></article>
+            <article class="code-card"><span>Signature</span><pre id="jwtSignature"></pre></article>
+          </div>
+          <div class="teaching-note">
+            <b>Importante:</b> Header y Payload se pueden decodificar. JWT firmado no significa que el contenido esté cifrado; la firma permite verificar integridad y autenticidad.
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer>
+      Demo académica · Apache HTTPS → Spring Boot + Spring Security/JWT → MySQL
+    </footer>
+  </div>
+
+  <div id="purchaseModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="purchaseTitle">
+    <div class="modal-card">
+      <button id="closeModalBtn" class="modal-close" aria-label="Cerrar">×</button>
+      <p class="eyebrow">COMPRA PROTEGIDA</p>
+      <h2 id="purchaseTitle">Comprar producto</h2>
+      <p id="purchaseProductName" class="muted"></p>
+      <form id="purchaseForm" class="form-stack">
+        <input id="purchaseProductId" type="hidden">
+        <label>Cantidad<input id="purchaseQuantity" type="number" min="1" value="1" required></label>
+        <button class="btn btn-primary" type="submit">Confirmar compra</button>
+      </form>
+      <div class="teaching-note">Esta petición será <code>POST /api/compras</code> e incluirá automáticamente el JWT.</div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

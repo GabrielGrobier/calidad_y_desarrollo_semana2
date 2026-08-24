@@ -1,0 +1,64 @@
+services:
+  mysql:
+    build:
+      context: ./mysql
+    image: tienda-mysql:latest
+    container_name: tienda-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: tienda
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      tienda-network:
+        aliases:
+          - mysql
+
+  app:
+    build:
+      context: ./backend
+    image: tienda-backend:latest
+    container_name: tienda-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/tienda?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: myuser
+      SPRING_DATASOURCE_PASSWORD: password
+    depends_on:
+      mysql:
+        condition: service_healthy
+    expose:
+      - "8080"
+    ports:
+      - "8081:8080"
+    networks:
+      tienda-network:
+        aliases:
+          - app
+
+  apache:
+    build:
+      context: ./apache
+    image: tienda-apache:latest
+    container_name: tienda-apache
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - tienda-network
+
+volumes:
+  mysql_data:
+
+networks:
+  tienda-network:
+    driver: bridge
