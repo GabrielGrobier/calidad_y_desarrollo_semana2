@@ -278,18 +278,6 @@ $('productForm').addEventListener('submit', async e => {
       const form = new FormData(); form.append('file', image);
       await api(`/productos/${created.id}/imagen`, {method:'POST', body:form});
     }
-    const image = $('productImage').files[0];
-
-    if (image) {
-      const form = new FormData();
-      form.append('file', image);
-
-      await api(`/productos/${created.id}/imagen`, {
-        method:'POST',
-        body:form
-      });
-    }
-
     e.target.reset();
     showMessage('Producto guardado correctamente.');
     activateTab('products');
