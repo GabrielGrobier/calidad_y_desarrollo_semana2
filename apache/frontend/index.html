@@ -117,6 +117,14 @@
               <label>Precio<input id="productPrice" required type="number" min="1" step="0.01" placeholder="49990"></label>
               <label>Stock<input id="productStock" required type="number" min="0" step="1" placeholder="20"></label>
               <label class="full">Descripción<textarea id="productDescription" rows="4" placeholder="Descripción del producto"></textarea></label>
+              <label class="full">
+                Imagen del producto (JPG, PNG o WebP, máximo 5 MB)
+                <input
+                  id="productImage"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                >
+              </label>
               <button class="btn btn-primary" type="submit">Guardar producto</button>
             </form>
           </div>

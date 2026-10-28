@@ -26,6 +26,29 @@ public class Product {
     @Column(nullable = false)
     private String categoria;
 
+    @Column(name = "imagen_key", length = 512)
+    private String imagenKey;
+
+    public String getImagenKey() { return imagenKey; }
+    public void setImagenKey(String imagenKey) { this.imagenKey = imagenKey; }
+
+    @Column(name = "imagen_key", length = 512)
+    private String imagenKey;
+
+    public String getImagenKey() { return imagenKey; }
+    public void setImagenKey(String imagenKey) { this.imagenKey = imagenKey; }
+
+    @Column(name = "imagen_key", length = 512)
+    private String imagenKey;
+
+    public String getImagenKey() {
+        return imagenKey;
+    }
+
+    public void setImagenKey(String imagenKey) {
+        this.imagenKey = imagenKey;
+    }
+
     public Product() {
     }
 

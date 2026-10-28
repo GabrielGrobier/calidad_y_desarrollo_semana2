@@ -1,0 +1,41 @@
+name: AWS Labs S3 - verificar integración
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  s3-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+      S3_BUCKET: ${{ vars.S3_BUCKET }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar configuración no vacía
+        run: |
+          test -n "$AWS_ACCESS_KEY_ID" && test -n "$AWS_SECRET_ACCESS_KEY" && test -n "$AWS_SESSION_TOKEN"
+          test -n "$AWS_REGION" && test -n "$S3_BUCKET"
+      - name: Verificar sesión temporal y acceso al bucket
+        run: |
+          aws sts get-caller-identity --query Arn --output text
+          aws s3api head-bucket --bucket "$S3_BUCKET"
+      - name: Compilar y levantar contenedores
+        run: docker compose up -d --build
+      - name: Comprobar endpoint HTTP en backend
+        run: |
+          for i in $(seq 1 25); do
+            if curl -fsS http://localhost:8081/health; then exit 0; fi
+            sleep 3
+          done
+          docker compose logs --tail=80 app
+          exit 1
+      - name: Detener laboratorio efímero
+        if: always()
+        run: docker compose down -v

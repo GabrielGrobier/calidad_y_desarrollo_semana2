@@ -29,6 +29,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/health", "/").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/productos/*/imagen").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/productos/*/imagen").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/productos/*/imagen").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/productos/*/imagen").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/productos/*/imagen").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/productos/*/imagen").authenticated()
                         .requestMatchers(HttpMethod.POST, "/productos").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/productos/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/compras").hasRole("CLIENTE")

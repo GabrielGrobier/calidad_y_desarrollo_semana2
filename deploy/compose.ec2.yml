@@ -1,0 +1,54 @@
+services:
+  mysql:
+    image: ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE_NAME}-mysql:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+      MYSQL_DATABASE: tienda
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      tienda-network:
+        aliases: [mysql]
+
+  app:
+    image: ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE_NAME}-backend:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/tienda?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: myuser
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-password}
+      AWS_REGION: ${AWS_REGION}
+      S3_BUCKET: ${S3_BUCKET}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    expose: ["8080"]
+    networks:
+      tienda-network:
+        aliases: [app]
+
+  apache:
+    image: ${DOCKERHUB_USERNAME}/${DOCKER_IMAGE_NAME}-apache:${IMAGE_TAG}
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+    networks: [tienda-network]
+
+volumes:
+  mysql_data:
+networks:
+  tienda-network:
+    driver: bridge

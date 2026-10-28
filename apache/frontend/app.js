@@ -4,7 +4,9 @@ const state = {
   token: sessionStorage.getItem('jwt') || '',
   username: sessionStorage.getItem('username') || '',
   roles: JSON.parse(sessionStorage.getItem('roles') || '[]'),
-  products: []
+  products: [],
+  imageUrls: [],
+  imageUrls: []
 };
 
 const $ = (id) => document.getElementById(id);
@@ -103,6 +105,10 @@ function renderJwt() {
 
 async function loadProducts() {
   const grid = $('productsGrid');
+  state.imageUrls.forEach(url => URL.revokeObjectURL(url));
+  state.imageUrls = [];
+  state.imageUrls.forEach(url => URL.revokeObjectURL(url));
+  state.imageUrls = [];
   grid.innerHTML = '<div class="empty">Cargando productos...</div>';
   try {
     state.products = await api('/productos');
@@ -112,7 +118,7 @@ async function loadProducts() {
     }
     grid.innerHTML = state.products.map(p => `
       <article class="product-card">
-        <div class="product-art">${escapeHtml(p.categoria || 'PRODUCTO')}</div>
+        <div class="product-art" id="product-image-${p.id}">${escapeHtml(p.categoria || 'PRODUCTO')}</div>
         <div class="product-body">
           <h3>${escapeHtml(p.nombre)}</h3>
           <p class="muted">${escapeHtml(p.descripcion || 'Sin descripción')}</p>
@@ -125,6 +131,39 @@ async function loadProducts() {
           </div>
         </div>
       </article>`).join('');
+
+    await Promise.all(state.products.filter(p => p.imagenKey).map(async p => {
+      try {
+        const response = await fetch(`${API}/productos/${p.id}/imagen`, {headers:authHeaders()});
+        if (!response.ok) return;
+        const url = URL.createObjectURL(await response.blob());
+        state.imageUrls.push(url);
+        const box = $(`product-image-${p.id}`);
+        if (box) box.innerHTML = `<img src="${url}" alt="Imagen de ${escapeHtml(p.nombre)}" style="width:100%;height:100%;object-fit:cover">`;
+      } catch (e) { console.warn('Imagen no disponible', e); }
+    }));
+    await Promise.all(state.products.filter(p => p.imagenKey).map(async p => {
+      try {
+        const response = await fetch(`${API}/productos/${p.id}/imagen`, {
+          headers: authHeaders()
+        });
+
+        if (!response.ok) return;
+
+        const url = URL.createObjectURL(await response.blob());
+
+        state.imageUrls.push(url);
+
+        const box = $(`product-image-${p.id}`);
+
+        if (box) {
+          box.innerHTML = `<img src="${url}" alt="Imagen de ${escapeHtml(p.nombre)}" style="width:100%;height:100%;object-fit:cover">`;
+        }
+
+      } catch (e) {
+        console.warn('Imagen no disponible', e);
+      }
+    }));
 
     document.querySelectorAll('.buy-btn').forEach(btn => btn.addEventListener('click', () => openPurchase(Number(btn.dataset.id))));
   } catch (e) {
@@ -226,7 +265,7 @@ $('purchaseForm').addEventListener('submit', async e => {
 $('productForm').addEventListener('submit', async e => {
   e.preventDefault();
   try {
-    await api('/productos', {
+    const created = await api('/productos', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         nombre:$('productName').value.trim(), categoria:$('productCategory').value.trim(),
@@ -234,7 +273,26 @@ $('productForm').addEventListener('submit', async e => {
         descripcion:$('productDescription').value.trim()
       })
     });
-    e.target.reset(); showMessage('Producto guardado correctamente.'); activateTab('products');
+    const image = $('productImage').files[0];
+    if (image) {
+      const form = new FormData(); form.append('file', image);
+      await api(`/productos/${created.id}/imagen`, {method:'POST', body:form});
+    }
+    const image = $('productImage').files[0];
+
+    if (image) {
+      const form = new FormData();
+      form.append('file', image);
+
+      await api(`/productos/${created.id}/imagen`, {
+        method:'POST',
+        body:form
+      });
+    }
+
+    e.target.reset();
+    showMessage('Producto guardado correctamente.');
+    activateTab('products');
   } catch (err) { showMessage(err.message, 'error'); }
 });
 
